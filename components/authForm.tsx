@@ -21,19 +21,15 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-const formSchema = z.object({
-  username: z.string().min(2).max(50),
-});
 type authProps = {
   type: string;
 };
 
 const authFormSchema = (type: string) => {
+  console.log(type);
   return z.object({
     name:
-      type === "sign-up"
-        ? z.string().min(2).max(50)
-        : z.string().min(2).max(50),
+      type === "sign-up" ? z.string().min(2).max(50) : z.string().optional(),
     email: z.string().email(),
     password: z.string().min(6),
   });
@@ -43,6 +39,7 @@ function AuthForm({ type }: authProps) {
   const router = useRouter();
   const isSignin = type === "sign-in";
   const formSchema = authFormSchema(type);
+  console.log(formSchema);
   // 1. Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -58,6 +55,7 @@ function AuthForm({ type }: authProps) {
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
     console.log(values);
+    console.log(type);
     try {
       if (type === "sign-in") {
         console.log("Sign in", values);
@@ -113,7 +111,6 @@ function AuthForm({ type }: authProps) {
               placeholder="Enter your password"
             />
 
-            {/* <FormFields /> */}
             <Button className="btn" type="submit">
               {isSignin ? "Sign In" : "Create an Account"}
             </Button>
