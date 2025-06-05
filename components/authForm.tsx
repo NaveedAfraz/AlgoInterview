@@ -20,6 +20,13 @@ import FormFields from "./formFields";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+import { auth } from "@/firebase/client";
+import { signUp } from "@/lib/actions/auth.action";
+import { signIn } from "@/lib/actions/auth.action";
 
 type authProps = {
   type: string;
@@ -51,7 +58,7 @@ function AuthForm({ type }: authProps) {
   });
 
   // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
     console.log(values);
@@ -59,12 +66,49 @@ function AuthForm({ type }: authProps) {
     try {
       if (type === "sign-in") {
         console.log("Sign in", values);
+        const { email, password } = values;
+        const userCredential = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+        const idToken = await userCredential.user?.getIdToken();
+        console.log(idToken);
+        if (!idToken) {
+          toast.error("Sign in failed");
+          return;
+        }
+        const result = await signIn(email, idToken);
+        console.log(result);
+        if (!result?.success) {
+          toast.error(result?.message);
+          return;
+        }
         toast("Sign in successfully");
         router.push("/");
       } else {
+        const { name, email, password } = values;
         console.log("Sign up", values);
+
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+        const result = await signUp({
+          uid: userCredential.user?.uid,
+          name: name || "",
+          email,
+          password,
+        });
+        console.log(result);
+
+        if (!result?.success) {
+          toast.error(result?.message);
+          return;
+        }
         toast("Sign up successfully");
-        router.push("/");
+        router.push("/signIn");
       }
     } catch (error) {
       console.log(error);
