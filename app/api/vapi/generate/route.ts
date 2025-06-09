@@ -1,6 +1,6 @@
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
-import { db } from "@/firebase/admin"; // Assuming this path is correct
+import { db } from "@/firebase/admin"; 
 import { getRandomInterviewCover } from "@/lib/utils";
 
 export async function GET() {
@@ -13,7 +13,6 @@ export async function POST(request: Request) {
 
   try {
     const { text: questions } = await generateText({
-      // Pass the apiKey directly to the google() function here:
       model: google("gemini-2.0-flash-001", {
         apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
       }),
