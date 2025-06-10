@@ -121,12 +121,11 @@ const Agent = ({
     console.log("Username:", userName);
     console.log("User ID:", userId);
     await vapi.start(process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!, {
-        variableValues: {
-          username: userName,
-          userid: userId,
-        },
-      });
-    }
+      variableValues: {
+        user_id: userId,
+        username: userName,
+      },
+    } as any);
     // else {
     //   let formattedQuestions = "";
     //   if (questions) {
@@ -142,7 +141,7 @@ const Agent = ({
     //   });
     // }
   };
-
+  }
   const handleDisconnect = () => {
     setCallStatus(CallStatus.FINISHED);
     vapi.stop();
