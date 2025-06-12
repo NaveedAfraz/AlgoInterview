@@ -157,39 +157,47 @@ const Agent = ({
 
   const handleCall = async () => {
     setCallStatus(CallStatus.CONNECTING);
+    console.log("Starting Vapi call with Workflow ID...");
 
-    // --- DEBUGGING LOG ---
-    console.log(
-      "Starting Vapi call with workflowId:",
-      "5a093846-6eb1-4196-9236-1504dba812fa"
-    );
-    console.log("Variables:", { username: userName, userid: userId });
-    // --- END DEBUGGING LOG ---
+    // This is the crucial part:
+    // Get your Workflow ID from the Vapi Dashboard -> Workflows section
+    const workflowId = process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID;
 
-    if (type === "generate") {
-      try {
-        const workflowId = "5a093846-6eb1-4196-9236-1504dba812fa";
+    if (!workflowId) {
+      console.error("NEXT_PUBLIC_VAPI_WORKFLOW_ID is not defined. Cannot start call.");
+      setCallStatus(CallStatus.INACTIVE);
+      return;
+    }
 
-        if (!workflowId) {
-          console.error("NEXT_PUBLIC_VAPI_WORKFLOW_ID is not defined.");
-          setCallStatus(CallStatus.INACTIVE);
-          return;
-        }
-
-        const assistantOverrides = {
-          variableValues: {
-            username: userName,
-            userid: userId,
-          },
-        };
-
-        await vapi.start(workflowId, assistantOverrides); // Pass workflowId as the assistantId, and overrides as the second argument
-
-        // setCallStatus(CallStatus.CONNECTED); // Set status on successful connection
-      } catch (error) {
-        console.error("Vapi start failed:", error);
-        setCallStatus(CallStatus.INACTIVE); // Reset status on error
-      }
+    try {
+      await vapi.start({
+        workflowId: workflowId, // Directly specify the workflow ID here
+        // You still need to configure other assistant properties, like voice and model,
+        // as they are part of the 'Assistant configuration' that starts the call.
+        // These can be defaults or specific to your use case.
+        voice: {
+          provider: "openai", // Example: use Google voices
+          voiceId: "en-US-Standard-C", // Example voice ID
+        },
+        model: {
+          provider: "openai", // Example: use OpenAI model
+          model: "gpt-4o", // Example model
+          messages: [
+            {
+              role: "system",
+              content: "You are a helpful interviewer. Follow the workflow.",
+            },
+          ],
+        },
+        // You can still pass variableValues here if needed by your workflow
+        variableValues: {
+          username: userName,
+          userid: userId,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to start Vapi call:", error);
+      setCallStatus(CallStatus.INACTIVE);
     }
   };
   const handleDisconnect = () => {
