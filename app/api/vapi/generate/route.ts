@@ -60,7 +60,7 @@ export async function POST(request: Request) {
       finalized: true,
       coverImage: getRandomInterviewCover(),
       amount,
-      userid: userid, // userid will be undefined if not provided in Vapi webhook
+      userid: userid || "123vfdb", // userid will be undefined if not provided in Vapi webhook
       createdAt: new Date().toISOString(),
       questions: JSON.parse(questions),
     };
