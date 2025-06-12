@@ -112,36 +112,86 @@ const Agent = ({
     }
   }, [messages, callStatus, feedbackId, interviewId, router, type, userId]);
 
+  // const handleCall = async () => {
+
+  //   setCallStatus(CallStatus.CONNECTING);
+
+  //   // --- DEBUGGING LOG ---
+  //   console.log(
+  //     "Starting Vapi call with workflowId:",
+  //     process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID
+  //   );
+  //   console.log("Variables (if applicable directly passed to start):", {
+  //     username: userName,
+  //     userid: userId,
+  //   }); // Keep for now for debugging if you re-introduce them
+  //   // --- END DEBUGGING LOG ---
+
+  //   if (type === "generate") {
+  //     try {
+  //       await vapi.start({
+  //         assistant: {
+  //           workflowId: process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!,
+  //         },
+  //         // If your Vapi workflow is designed to receive these directly
+  //         // at the top level of the `start` payload, uncomment the following:
+  //         variableValues: {
+  //           // <-- These should be at the top level, alongside 'assistant'
+  //           username: userName,
+  //           userid: userId,
+  //         },
+  //       } as any);
+  //     } catch (error) {
+  //       console.error("Error starting Vapi call:", error);
+  //       setCallStatus(CallStatus.INACTIVE);
+  //     }
+  //   } else {
+  //     let formattedQuestions = "";
+  //     if (questions) {
+  //       formattedQuestions = questions
+  //         .map((question) => `- ${question}`)
+  //         .join("\n");
+  //     }
+  //   }
+  // };
+
   const handleCall = async () => {
     setCallStatus(CallStatus.CONNECTING);
 
-    if (type === "generate") {
-      console.log("Attempting to start Vapi call with:");
-    console.log("Workflow ID:", process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID);
-    console.log("Username:", userName);
-    console.log("User ID:", userId);
-    await vapi.start(process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!, {
-      variableValues: {
-        user_id: userId,
-        username: userName,
-      },
-    } as any);
-    // else {
-    //   let formattedQuestions = "";
-    //   if (questions) {
-    //     formattedQuestions = questions
-    //       .map((question) => `- ${question}`)
-    //       .join("\n");
-    //   }
+    // --- DEBUGGING LOG ---
+    console.log(
+      "Starting Vapi call with workflowId:",
+      "5a093846-6eb1-4196-9236-1504dba812fa"
+    );
+    console.log("Variables:", { username: userName, userid: userId });
+    // --- END DEBUGGING LOG ---
 
-    //   await vapi.start(interviewer, {
-    //     variableValues: {
-    //       questions: formattedQuestions,
-    //     },
-    //   });
-    // }
+    if (type === "generate") {
+      try {
+        const workflowId = "5a093846-6eb1-4196-9236-1504dba812fa";
+
+        if (!workflowId) {
+          console.error("NEXT_PUBLIC_VAPI_WORKFLOW_ID is not defined.");
+          setCallStatus(CallStatus.INACTIVE);
+          return;
+        }
+
+        const assistantOverrides = {
+          variableValues: {
+            username: userName,
+            userid: userId,
+          },
+        };
+
+        await vapi.start(workflowId, assistantOverrides); // Pass workflowId as the assistantId, and overrides as the second argument
+
+        // setCallStatus(CallStatus.CONNECTED); // Set status on successful connection
+      } catch (error) {
+        console.error("Vapi start failed:", error);
+        setCallStatus(CallStatus.INACTIVE); // Reset status on error
+      }
+    }
   };
-  }
   const handleDisconnect = () => {
     setCallStatus(CallStatus.FINISHED);
     vapi.stop();
@@ -208,10 +258,14 @@ const Agent = ({
               )}
             />
 
-            <span className="relative">{isCallInactiveOrFinished ? "Call" : ". . ."}</span>
+            <span className="relative">
+              {isCallInactiveOrFinished ? "Call" : ". . ."}
+            </span>
           </button>
         ) : (
-          <button className="btn-disconnect" onClick={handleDisconnect}>End</button>
+          <button className="btn-disconnect" onClick={handleDisconnect}>
+            End
+          </button>
         )}
       </div>
     </>

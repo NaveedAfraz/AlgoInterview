@@ -1,6 +1,6 @@
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
-import { db } from "@/firebase/admin"; 
+import { db } from "@/firebase/admin";
 import { getRandomInterviewCover } from "@/lib/utils";
 
 export async function GET() {
@@ -8,9 +8,17 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { type, role, level, techstack, amount, userid, coverImage } =
-    await request.json();
-
+  const body = await request.json();
+  console.log(body);
+  const { type, role, level, techstack, amount, userid } = JSON.parse(
+    body.message.toolCallList[0].function.arguments
+  );
+  console.log("type", type);
+  console.log("role", role);
+  console.log("level", level);
+  console.log("techstack", techstack);
+  console.log("amount", amount);
+  console.log("userid", userid);
   try {
     const { text: questions } = await generateText({
       model: google("gemini-2.0-flash-001", {
