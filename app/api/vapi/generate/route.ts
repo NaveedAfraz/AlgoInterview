@@ -1,7 +1,7 @@
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
-import { db } from "@/firebase/admin";
-import { getRandomInterviewCover } from "@/lib/utils";
+import { db } from "@/firebase/admin"; // Assuming this path is correct
+import { getRandomInterviewCover } from "@/lib/utils"; // Assuming this path is correct
 
 export async function GET() {
   return Response.json({ success: true, data: "Hello World" }, { status: 200 });
@@ -9,45 +9,29 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const body = await request.json();
-  console.log("Incoming Vapi Webhook Body:", JSON.stringify(body, null, 2)); // Log the full body for inspection
+  console.log("Incoming Vapi Webhook Body (Direct Properties):", JSON.stringify(body, null, 2)); // Log the full body for inspection
 
   try {
-    // Safely access nested properties
-    const message = body?.message;
-    const toolCallList = message?.toolCallList;
+    // Access the properties directly from the 'body' object
+    // Vercel logs confirmed these are top-level properties in the POST body.
+    const { type, role, level, amount, techstack, userid } = body; // userid might be missing if not explicitly passed
 
-    if (!toolCallList || toolCallList.length === 0) {
-      console.error("Vapi webhook did not contain expected toolCallList.");
-      // You might want to handle other Vapi webhook types here if necessary
-      // For now, return an error or a success if this specific endpoint
-      // only handles tool calls.
-      return Response.json(
-        { success: false, error: "Expected toolCallList not found in webhook body." },
-        { status: 400 } // Bad Request because the payload structure is not what's expected for this operation
-      );
+    // Add checks for undefined values if 'userid' or others might not always be present
+    if (!role || !type || !level || !amount || !techstack) {
+        console.error("Missing required parameters in Vapi webhook body.");
+        return Response.json(
+            { success: false, error: "Missing required parameters (role, type, level, amount, techstack)." },
+            { status: 400 }
+        );
     }
 
-    const functionCall = toolCallList[0]?.function;
-
-    if (!functionCall || !functionCall.arguments) {
-      console.error("Vapi webhook toolCallList did not contain expected function arguments.");
-      return Response.json(
-        { success: false, error: "Function arguments not found in tool call." },
-        { status: 400 }
-      );
-    }
-
-    const { type, role, level, techstack, amount, userid } = JSON.parse(
-      functionCall.arguments
-    );
-
-    console.log("Parsed Tool Call Arguments:");
+    console.log("Parsed Request Body Parameters:");
     console.log("type", type);
     console.log("role", role);
     console.log("level", level);
     console.log("techstack", techstack);
     console.log("amount", amount);
-    console.log("userid", userid);
+    console.log("userid", userid); // Will be undefined if not sent by Vapi
 
     const { text: questions } = await generateText({
       model: google("gemini-2.0-flash-001", {
@@ -76,7 +60,7 @@ export async function POST(request: Request) {
       finalized: true,
       coverImage: getRandomInterviewCover(),
       amount,
-      userid: userid,
+      userid: userid, // userid will be undefined if not provided in Vapi webhook
       createdAt: new Date().toISOString(),
       questions: JSON.parse(questions),
     };
@@ -85,7 +69,7 @@ export async function POST(request: Request) {
 
     return Response.json({ success: true }, { status: 200 });
   } catch (error) {
-    console.error("Error in POST /api/vapi/generate:", error); // Use console.error for errors
+    console.error("Error in POST /api/vapi/generate:", error);
     return Response.json(
       { success: false, error: (error as Error).message },
       { status: 500 }
